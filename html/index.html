@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManiMods Diving HUD [NOT AI]</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 100vh;
+            background-size: cover;
+            color: white;
+            overflow: hidden;
+            background-color: transparent;
+        }
+
+        .hud-container {
+            position: fixed;
+            bottom: 20px;
+            width: 250px;
+            padding: 10px;
+            background-color: rgba(0, 14, 61, 0.493);
+            border-radius: 7.5px;
+            border: 2px solid rgba(92, 190, 255, 0.2);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: none;
+        }
+
+        .hud-container.visible {
+            opacity: 1;
+            display: block;
+        }
+
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .hud-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .percentage {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .air-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            animation: containerPulse 2s infinite;
+        }
+
+        @keyframes containerPulse {
+            0% {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+            50% {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+            100% {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .air-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            border-radius: 6px;
+            transition: transform 0.3s ease;
+            transform-origin: left;
+        }
+
+        .air-bar.warning {
+            background: linear-gradient(to right, #f39c12, #f1c40f);
+        }
+
+        .air-bar.critical {
+            background: linear-gradient(to right, #c0392b, #e74c3c);
+        }
+
+        .air-bar-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, 
+                            transparent 0%, 
+                            rgba(255, 255, 255, 0.1) 50%, 
+                            transparent 100%);
+            pointer-events: none;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+            margin-right: 5px;
+        }
+
+        .status-indicator.warning {
+            background-color: #f39c12;
+        }
+
+        .status-indicator.critical {
+            background-color: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+            }
+            50% {
+                opacity: 0.5;
+                box-shadow: 0 0 0 5px rgba(255, 0, 0, 0);
+            }
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-container" id="oxygen-hud">
+        <div class="hud-header">
+            <div style="display: flex; align-items: center;">
+                <div class="status-indicator" id="status-dot"></div>
+                <div class="hud-title">OXYGEN</div>
+            </div>
+            <div class="percentage" id="percentage">100%</div>
+        </div>
+        <div class="air-bar-container">
+            <div class="air-bar" id="air-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        const airBar = document.getElementById('air-bar');
+        const percentageElement = document.getElementById('percentage');
+        const statusDot = document.getElementById('status-dot');
+        const oxygenHud = document.getElementById('oxygen-hud');
+
+        updateAirLevel(1000);
+        
+        function updateAirLevel(level) {
+            level = Math.max(0, Math.min(1000, level));
+
+            airBar.style.transform = `scaleX(${level / 1000})`;
+
+            percentageElement.textContent = `${Math.round(level / 10)}%`;
+
+            if (level <= 150) {
+                airBar.className = 'air-bar critical';
+                statusDot.className = 'status-indicator critical';
+            } else if (level <= 300) {
+                airBar.className = 'air-bar warning';
+                statusDot.className = 'status-indicator warning';
+            } else {
+                airBar.className = 'air-bar';
+                statusDot.className = 'status-indicator';
+            }
+        }
+
+        function toggleHudVisibility(isVisible) {
+            if (isVisible) {
+                oxygenHud.classList.add('visible');
+            } else {
+                oxygenHud.classList.remove('visible');
+            }
+        }
+
+        function updateFromGame(airLevel) {
+            updateAirLevel(airLevel);
+        }
+
+        window.updateFromGame = updateFromGame;
+        window.toggleHudVisibility = toggleHudVisibility;
+
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'updateOxygen') {
+                updateAirLevel(event.data.value);
+            }
+            else if (event.data.type === 'toggleHud') {
+                toggleHudVisibility(event.data.visible);
+            }
+        });
+    </script>
+</body>
+</html>
