@@ -7,7 +7,7 @@ Config.Gender = {
     [GetHashKey('mp_f_freemode_01')] = 'Female',
 }
 
-Config.GetSkin = function()
+Config.GetSkin = function() -- Skin is the only function using my Bridge - Changing this to your clothing script, and you wouldnt need a whole bridge for this resource
     return exports['mani-bridge']:GetSkin(false)
 end
 
