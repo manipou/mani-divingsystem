@@ -1,3 +1,4 @@
+local Config = lib.load('config')
 local oxygenLevel = 1000
 local scubaOn = false
 local originalSkin = nil
@@ -18,13 +19,13 @@ local function applySkin(playerPed, toggle)
     local gender = Config.Gender[pedModel]
     if not gender then return end
     if toggle then
-        if not originalSkin then originalSkin = exports['mani-bridge']:GetSkin(false) end
+        if not originalSkin then originalSkin = Config.GetSkin() end
 
         SetPedComponentVariation(playerPed, 8, gender == 'Male' and 124 or 154)
         SetPedPropIndex(playerPed, 1, gender == 'Male' and 26 or 28)
         SetPedComponentVariation(playerPed, 6, gender == 'Male' and 67 or 70)
     else
-        exports['mani-bridge']:SetSkin(playerPed, originalSkin)
+        Config.SetSkin(playerPed, originalSkin)
         originalSkin = nil
     end
 end
@@ -116,7 +117,7 @@ exports('refillOxygen', function(data)
 			flags = 51,
         }
     }) then
-        lib.callback.await('mani-divingsystem:server:removeTank', false, data.slot or nil)
+        if data.slot then lib.callback.await('mani-divingsystem:server:removeTank', false, data.slot or nil) end
         SetOxygenLevel(1000)
     end
 end)
